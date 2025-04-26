@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One Team DB</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1 class="title">One Team Gym Management</h1>
+  <div class="container">
+    <!-- Tab Buttons -->
+    <div class="tab-buttons">
+      <button onclick="showAddMember()">Add Member</button>
+      <button onclick="showFetchMember()">Fetch Member</button>
+      <button onclick="showDeleteMember()">Delete Member</button>
+    </div>
+
+    <!-- Add Member Section -->
+    <div id="add-member-section">
+      <h2>Add Member</h2>
+      <div class="form-control">
+        <label for="name">Name:</label>
+        <input type="text" id="name" placeholder="Enter name" />
+      </div>
+      <div class="form-control">
+        <label for="age">Age:</label>
+        <input type="number" id="age" placeholder="Enter age" />
+      </div>
+      <div class="form-control">
+        <label for="last-login">Last Login:</label>
+        <input type="date" id="last-login" />
+      </div>
+      <div class="form-control">
+        <label for="last-workout">Last Workout:</label>
+        <select id="last-workout">
+          <option value="Cardio">Cardio</option>
+          <option value="Strength Training">Strength Training</option>
+          <option value="Yoga">Yoga</option>
+          <option value="CrossFit">CrossFit</option>
+        </select>
+      </div>
+      <button onclick="addMember()">Add Member</button>
+    </div>
+
+    <!-- Fetch Member Section -->
+    <div id="fetch-member-section" style="display: none;">
+      <h2>Fetch Member</h2>
+      <div class="form-control">
+        <label for="search-name">Search by Name:</label>
+        <input type="text" id="search-name" placeholder="Enter name to search" />
+      </div>
+      <button onclick="fetchMember()">Fetch Member</button>
+      <div id="member-details"></div>
+    </div>
+
+    <!-- Delete Member Section -->
+    <div id="delete-member-section" style="display: none;">
+      <h2>Delete Member</h2>
+      <div class="form-control">
+        <label for="delete-id">Member ID:</label>
+        <input type="text" id="delete-id" placeholder="Enter member ID" />
+      </div>
+      <button class="button-danger" onclick="deleteMember()">Delete Member</button>
+      <div id="delete-status"></div>
+    </div>
+  </div>
+
+  <script>
+    function showAddMember() {
+      document.getElementById('add-member-section').style.display = 'block';
+      document.getElementById('fetch-member-section').style.display = 'none';
+      document.getElementById('delete-member-section').style.display = 'none';
+    }
+
+    function showFetchMember() {
+      document.getElementById('add-member-section').style.display = 'none';
+      document.getElementById('fetch-member-section').style.display = 'block';
+      document.getElementById('delete-member-section').style.display = 'none';
+    }
+
+    function showDeleteMember() {
+      document.getElementById('add-member-section').style.display = 'none';
+      document.getElementById('fetch-member-section').style.display = 'none';
+      document.getElementById('delete-member-section').style.display = 'block';
+    }
+
+    async function addMember() {
+      const name = document.getElementById('name').value;
+      const age = document.getElementById('age').value;
+      const lastLogin = document.getElementById('last-login').value;
+      const lastWorkout = document.getElementById('last-workout').value;
+
+      const res = await fetch('/add-member', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          age,
+          dateJoined: new Date().toISOString().split('T')[0],
+          lastLogin,
+          lastWorkout,
+        }),
+      });
+      const data = await res.json();
+      alert('Member added with ID: ' + data.id);
+    }
+
+    async function fetchMember() {
+      const name = document.getElementById('search-name').value;
+      const res = await fetch(`/get-member?name=${name}`);
+      const member = await res.json();
+
+      const detailsDiv = document.getElementById('member-details');
+      if (member) {
+        detailsDiv.innerHTML = `
+          <div class="member-info">
+            <span>ID:</span> ${member.id}
+            <span>Name:</span> ${member.name}
+            <span>Age:</span> ${member.age}
+            <span>Date Joined:</span> ${member.date_joined}
+            <span>Last Login:</span> ${member.last_login}
+            <span>Last Workout:</span> ${member.last_workout}
+          </div>
+        `;
+      } else {
+        detailsDiv.innerHTML = '<p>No member found.</p>';
+      }
+    }
+
+    async function deleteMember() {
+      const id = document.getElementById('delete-id').value;
+
+      const res = await fetch(`/delete-member`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      const result = await res.json();
+      const statusDiv = document.getElementById('delete-status');
+      if (result.success) {
+        statusDiv.innerHTML = `<p>Member with ID ${id} deleted successfully.</p>`;
+      } else {
+        statusDiv.innerHTML = `<p>Error: ${result.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
