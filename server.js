@@ -8,7 +8,7 @@ const db = new sqlite3.Database('gym.db');
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// Initialize the database
+
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS members (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,9 +20,10 @@ db.serialize(() => {
   )`);
 });
 
-// Add a new member
+
 app.post('/add-member', (req, res) => {
   const { name, age, dateJoined, lastLogin, lastWorkout } = req.body;
+  console.log('Adding member:', req.body);
   db.run(
     `INSERT INTO members (name, age, date_joined, last_login, last_workout) VALUES (?, ?, ?, ?, ?)`,
     [name, age, dateJoined, lastLogin, lastWorkout],
@@ -33,7 +34,7 @@ app.post('/add-member', (req, res) => {
   );
 });
 
-// Fetch member by ID or name
+
 app.get('/get-member', (req, res) => {
   const { id, name } = req.query;
   let query = 'SELECT * FROM members WHERE ';
@@ -56,16 +57,23 @@ app.get('/get-member', (req, res) => {
 });
 
 app.delete('/delete-member', (req, res) => {
-    const { id } = req.body;
-    const index = gymDatabase.findIndex(member => member.id === id);
-  
-    if (index !== -1) {
-      gymDatabase.splice(index, 1);
+  const id = req.body.id || req.query.id;
+  console.log('Deleting member ID:', id);
+  if (!id) {
+    return res.status(400).json({ success: false, message: 'No ID provided' });
+  }
+  db.run(`DELETE FROM members WHERE id = ?`, [id], function(err) {
+    if (err) {
+      console.error('DB Delete Error:', err.message);
+      return res.status(500).json({ success: false, message: err.message });
+    }
+    if (this.changes > 0) {
       res.json({ success: true });
     } else {
-      res.json({ success: false, message: 'Member is not in database system' });
+      res.json({ success: false, message: 'Member not found' });
     }
   });
+});
   
 
 const PORT = 3000;
